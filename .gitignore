@@ -1,0 +1,18 @@
+# Environment
+.venv/
+.env
+
+# Python build and cache files
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Data (large, reproducible from the scripts)
+data/
+*.parquet
+
+# Local files
+*.log
+.vscode/

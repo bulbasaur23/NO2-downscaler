@@ -1,0 +1,15 @@
+gee_project: "no2-downscaler"
+
+grid_deg: 0.05  # pixel area is ~5.5 * 3.5 km (in lat and lon)
+
+# delhi ncr bouding box
+delhi_ncr:
+  west: 76.80
+  south: 28.20
+  east: 77.80
+  north: 29.00
+
+no2_collection: "COPERNICUS/S5P/OFFL/L3_NO2" #data directory 
+no2_band: "tropospheric_NO2_column_number_density" #column we want 
+
+

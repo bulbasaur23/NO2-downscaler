@@ -1,0 +1,16 @@
+#project metadata
+
+[project] 
+name="no2"                           #Package name 
+version="0.1.0"                      #Package version
+requires-python=">=3.10"             #min Python version
+
+
+[build-system]
+requires= ["setuptools>=68"]        #build dependency
+build-backend="setuptools.build_meta"
+
+
+#find packages inside src directory
+[tool.setuptools.packages.find]
+where=["src"]
