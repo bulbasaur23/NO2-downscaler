@@ -14,3 +14,14 @@
 - Archive holes: notes/archive_holes.csv. Clusters: 2023-05 to 2023-07 (20 short
   days), 2025-10 to 2025-11 (13 short days, zero-granule day 2025-11-01).
 - NO2 archive ends 2026-10-08 (date-picker cap will be set by weather, D4).
+
+## D4: weather sources (partial, Day 2)
+- BLH exists in GEE: ECMWF/ERA5/HOURLY band 'boundary_layer_height'
+  (28 km). ERA5-Land (11 km) has no BLH. The CDS route is not needed.
+- Latest data 2026-10-13 for both (6-day lag). Plan assumed 2-3 months.
+  Likely preliminary data in the newest part: verify when building the live path.
+- NO2 archive ends 2026-10-08, so the date-picker cap is set by NO2.
+- ECMWF/ERA5/DAILY has no data after mid-2025: unusable.
+- Humidity from dewpoint. Precipitation is accumulated: handle in Phase 1.
+- ERA5 pixel 0.25 deg: about 4 x 3 weather pixels in the NCR box.
+- Parity test (ERA5 vs ERA5-Land): see scripts/06_weather_parity.py. Decision pending.
