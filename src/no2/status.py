@@ -14,9 +14,9 @@ def day_status(n_images,valid_frac,cloud_frac,min_valid=0.5):
     # if cloud_missing and valid=0 then -->no overpass
     # if valid and more than min_valid --> observed else insufficient
     if not n_images:
-        return "no overpass"
+        return "no_overpass"
     if cloud_missing and valid==0:
-        return "no overpass"
+        return "no_overpass"
     if valid>=min_valid:
         return "observed"
     return "insufficient"
