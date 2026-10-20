@@ -1,0 +1,6 @@
+source asset: WRI/GPPD/power_plants
+pulled: 2026-10-20
+filter: country == IND, fuel1 in ['Coal', 'Gas', 'Oil']
+plants saved: 332
+note: snapshot is old (generation columns end 2016; closed plants still listed).
+      Apply config/emitters_exclude.csv before use.

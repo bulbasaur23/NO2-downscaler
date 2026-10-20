@@ -165,9 +165,54 @@ OPEN = not yet checked.
   water_class). Roads, elevation and emitter distance are still to be added.
 - Phase 0 Parquet: data/interim/delhi_2024-01.parquet (with file metadata).
 - Emitters: OPEN (Day 3).
+- Source: WRI Global Power Plant Database via GEE (WRI/GPPD/power_plants), frozen to
+    config/emitters_india_fossil.csv (332 plants: 246 coal, 60 gas, 26 oil) with
+    config/emitters_india_fossil.meta.txt (asset, pull date, filter). Feature code reads
+    only the frozen file, never the asset. India total in the asset: 845 plants.
+  - Snapshot is old: generation columns end 2016, newest known plant in the Delhi area
+    ~2012 (solar plants have comm_year 0). Plants built since are missing; closed plants
+    are still listed. No release/version field in the asset.
+  - Verified closures, excluded via config/emitters_exclude.csv:
+    BADARPUR (705 MW coal): permanently shut 2018-10-15 (news reports, Oct 2018).
+    RAJGHAT (135 MW coal): stopped 2015, formally closed 2019 (Delhi cabinet, GEM tracker).
+    Other plants in the list are NOT individually verified as operating. Before adding
+    Hyderabad, Bengaluru and Kolkata (Phase 5), check the plants near each.
+  - Fossil only (Coal, Gas, Oil). Hydro, solar, nuclear and wind are not NOx sources.
+    Biomass (50) and cogeneration (1) excluded as small: a judgement, easy to revisit.
+    Industrial sources (kilns, steel, cement) are not covered by this dataset.
+  - Largest sources near the box are OUTSIDE it: Indira Gandhi STPP (1,500 MW) and
+    Mahatma Gandhi TPP (1,320 MW) ~0.4 deg west, Panipat (920 MW) north. Capacity
+    matters as much as distance.
+  - Features: emit_dist_km (nearest plant), emit_cap_50km_mw (capacity within 50 km;
+    the radius is a guess). Superseded: the first emit_dist_km (20 plants including
+    hydro, solar, nuclear and the two closed plants).
+  - Signal check against Jan 2024 mean NO2 and against distance to central Delhi:
+     - Signal check (Jan 2024, 320 cells, Spearman vs mean observed NO2): emit_dist_km -0.77,
+    emit_cap_50km_mw +0.46, distance to central Delhi (reference only, not a feature) -0.72.
+    Overlap with the urban core: emit_dist vs dist_center +0.56; cap vs dist_center -0.43.
+    Coefficient of variation: emit_dist 0.53, emit_cap 0.39 (both above the 0.3
+    near-constant flag). With 330 plants after exclusions, 12 near the box.
+    Caveats: one winter month; neighbouring cells are autocorrelated so the effective
+    sample is far below 320; plants sit in or near urban areas, so this is largely
+    "urbanness". No significance test.
+    Decision: KEEP both as candidates for the Phase 3 ablation. No claim that they help.
+        Partial correlation (rank-based, 320 cells, 11-21 observed days per cell, median 17).
+    Controlling for distance to a hard-coded Delhi centre (28.63N, 77.22E): emit_dist_km
+    -0.63, emit_cap_50km_mw +0.23. Controlling for a spatial surface (scripts/10d):
+      plane (lat+lon):                 emit_dist -0.79, emit_cap +0.51
+      quadratic surface:               emit_dist -0.42, emit_cap -0.11
+      quadratic surface + centre dist: emit_dist -0.46, emit_cap -0.32
+    emit_dist_km keeps ~-0.4 under the flexible surface (borderline vs. my pre-set
+    ~0.4 guide). It may reflect sharp structure around plants, or local urban hotspots
+    near them; not separable here. emit_cap_50km_mw collapses and changes sign: the raw
+    +0.46 was mostly location. Heavy controls can also remove real signal from smooth
+    features. One winter month, correlational, no model.
+    Decision: KEEP emit_dist_km as a Phase 3 ablation candidate. DROP emit_cap_50km_mw
+    from the first feature set (test capacity via the wind-aware exposure instead, not
+    by tuning the 50 km radius). The column stays in cells_static.parquet but is unused.
 
 ## Open items before gate G0
-- Emitter list and per-city counts (scripts/10).
+- Emitter features: signal check (scripts/10b) and decision on whether to keep them.
 - CPCB station access: automatic or manual? Drop if manual.
 - D7 demo decision.
 - Record the exact QA threshold and what the GEE collection already filters.
