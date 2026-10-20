@@ -151,7 +151,38 @@ OPEN = not yet checked.
   must never be cached as data.
 
 ## D7. Demo setup
-- OPEN. Default per plan: local run plus pre-computed Delhi and Hyderabad polygons.
+- LOCKED (plan default): local run plus pre-computed cached Delhi and Hyderabad
+  polygons. A hosted public endpoint is a stretch goal, only if the measured quota cost
+  allows it.
+- ## CPCB / ground stations (Day 3, provisional)
+- CPCB portal: form-based per station/pollutant with several filters (CEEW 2021; 2020
+  guide: ~1 week of 15-min data per download). No documented API in these sources.
+  Both sources are old: current state not verified.
+- Third-party mirrors: Princeton compilation (hourly 2015-2019, CC BY; too early);
+  OpenCity per-station CSVs for Delhi (15-min 2024-25, hourly 2017-2023, 39 stations,
+  public domain, last updated 2026-01-15, source cited as CPCB).
+- Provisional: ground validation = OPTIONAL, Delhi only, via OpenCity CSVs.
+  Not a model input. Surface NO2 (ug/m3) vs tropospheric column: correlation check only.
+  Provenance: CPCB QC is undocumented; mirror values not treated as clean ground truth.
+- - Test (scripts/11_ground_check.py, 11b): ITO station, OpenCity del-ito-cpcb-2024-25.csv.
+  68,985 rows of 15-minute data (2024-01-01 to 2025-12-31 23:30, ~98% of expected rows),
+  1 unparsable timestamp, no duplicates, 29 columns. NO2 (ug/m3) present in 67,124 (97%);
+  every month has at least ~87% of expected NO2 readings. Median 59.4, max 499.2
+  (needs an outlier filter). Parse timestamps with format="ISO8601" (default parsing
+  dropped 61% of rows).
+- - Timezone (scripts/11c): timestamps are local time (IST) labelled +0000. Solar radiation
+  peaks at as-written hour 12 (Shadipur) and 13 (Sirifort); real UTC would peak at 6-7
+  (local solar noon ~12:20 IST = ~06:50 UTC). ITO and Shadipur NO2 profiles agree
+  (min hours 14-15, max 20-21). Inferred from data, not documented: check the OpenCity
+  Data Dictionary. The two stations differ by 1 hour (possible start- vs end-of-interval
+  stamping), so treat timing as +-1 h. Cost is small: ITO median NO2 changes ~5% per
+  hour at as-written hours 12-14, against ~40-50% if the label were taken at face value.
+- Sirifort NO2 looks inverted (median min at as-written hour 21, max at 15; 95% of
+  readings present). Cause unknown. Do not use Sirifort NO2 until inspected.
+- Radiation sensors have offsets (Shadipur ~37 W/m2 at night): use SR for peak timing only.
+- Still missing: station latitude/longitude (do not guess; source from a station list),
+  and the 2022-23 files. Overlap with the 1.8.0 version-shift test (from 2025-11-22) is
+  ~40 days. Ground validation stays OPTIONAL (Delhi only, not a model input).
 
 ## D8. Study area, water, static layers
 - Delhi NCR bounding box: 76.80-77.80 E, 28.20-29.00 N, 320 cells (20 x 16).
