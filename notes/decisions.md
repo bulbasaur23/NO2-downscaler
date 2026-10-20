@@ -34,3 +34,12 @@
 - Store obs_utc_hour and n_granules in every Parquet row.
 - Caveat: derived times are not independently verified. Winter scatter vs
   granule start is 4.3 min (std), worst case ~10-15 min, ~2-3% on BLH.
+
+## D8: water mask (Day 3)
+- ESA WorldCover v200, class 80 (permanent water), 30 m scale, mean per cell.
+- NCR box: 320 of 320 cells are land. Max water fraction 7.5% (cells along the
+  Yamuna, lon 77.2-77.3, lat 28.5-28.8; not map-checked).
+- Cutoffs 10/90, 20/80, 30/70 all give identical results here, so the 20/80
+  guess is untested. Revisit with Hyderabad and Bengaluru (Phase 5).
+- Limit: permanent water only. Monsoon floodplain inundation not captured.
+- water_frac stored in data/interim/cells_static.parquet.
