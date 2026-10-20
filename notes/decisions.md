@@ -37,11 +37,23 @@ OPEN = not yet checked.
 - The NO2 mask is not shared across bands in the data we receive: cloud fraction and
   solar angles are present where NO2 is masked (2024-01-04 to 06). The cloud band can
   therefore be used as a separate signal for D6 reason codes.
--- Negative values are retained in the product (tropospheric column min -0.0005375
+-Negative values are retained in the product (tropospheric column min -0.0005375
   mol/m2, ~-537 umol/m2, approximate). Delhi NCR, Jan 2024 cell means: 5,943 values,
   min 24.1 umol/m2, 0 negatives, 0 below 20. One winter month only: re-check on the
   full export (monsoon). The live app can target low-NO2 regions anywhere in India, so
   a rule for zero/negative values is needed before the log-transformed target (Phase 3).
+- Doc note: solar_zenith_angle's description says "satellite" but the name and values
+  (8-82 deg; 18-51 deg over Delhi) indicate the sun. no2.solar assumes the sun.
+- Day-level status and cell-level observed are different rules. Example: 2024-01-13
+  is "insufficient" (mean valid 0.46) but 200 of 320 cells have a value.
+- Export rule (found Day 3): reduceRegions omits a property when the mean is null,
+  and CSV export then drops the whole column. Every exported feature must carry every
+  column. Missing values are written as -9999 and converted to NaN at load. The
+  sentinel must never reach a model or a map.
+- Verified: the 2024-01 batch export matches the interactive run for 2024-01-15
+  exactly (NO2 and valid, difference 0.0; 311 cells with NO2 in both).
+- Missing solar angles: 488 cells = 2024-01-28 (320, no_overpass) + 01-13/14/15/31
+  (6/15/9/138, swath edge; matches 07b ang_valid 0.93/0.88/0.92/0.47).
 
 ## D3. Time window and processor versions
 - Version labels per granule: PROCESSOR_VERSION and ALGORITHM_VERSION.
@@ -154,7 +166,8 @@ OPEN = not yet checked.
 - LOCKED (plan default): local run plus pre-computed cached Delhi and Hyderabad
   polygons. A hosted public endpoint is a stretch goal, only if the measured quota cost
   allows it.
-- ## CPCB / ground stations (Day 3, provisional)
+
+## CPCB / ground stations (Day 3, provisional)
 - CPCB portal: form-based per station/pollutant with several filters (CEEW 2021; 2020
   guide: ~1 week of 15-min data per download). No documented API in these sources.
   Both sources are old: current state not verified.
@@ -164,13 +177,13 @@ OPEN = not yet checked.
 - Provisional: ground validation = OPTIONAL, Delhi only, via OpenCity CSVs.
   Not a model input. Surface NO2 (ug/m3) vs tropospheric column: correlation check only.
   Provenance: CPCB QC is undocumented; mirror values not treated as clean ground truth.
-- - Test (scripts/11_ground_check.py, 11b): ITO station, OpenCity del-ito-cpcb-2024-25.csv.
+- Test (scripts/11_ground_check.py, 11b): ITO station, OpenCity del-ito-cpcb-2024-25.csv.
   68,985 rows of 15-minute data (2024-01-01 to 2025-12-31 23:30, ~98% of expected rows),
   1 unparsable timestamp, no duplicates, 29 columns. NO2 (ug/m3) present in 67,124 (97%);
   every month has at least ~87% of expected NO2 readings. Median 59.4, max 499.2
   (needs an outlier filter). Parse timestamps with format="ISO8601" (default parsing
   dropped 61% of rows).
-- - Timezone (scripts/11c): timestamps are local time (IST) labelled +0000. Solar radiation
+- Timezone (scripts/11c): timestamps are local time (IST) labelled +0000. Solar radiation
   peaks at as-written hour 12 (Shadipur) and 13 (Sirifort); real UTC would peak at 6-7
   (local solar noon ~12:20 IST = ~06:50 UTC). ITO and Shadipur NO2 profiles agree
   (min hours 14-15, max 20-21). Inferred from data, not documented: check the OpenCity
@@ -193,10 +206,10 @@ OPEN = not yet checked.
   identical results, so the 20/80 guess is untested here. Revisit with Hyderabad and
   Bengaluru (Phase 5). Permanent water only: monsoon floodplain not captured.
 - Static table: data/interim/cells_static.parquet (cell geometry, water_frac,
-  water_class). Roads, elevation and emitter distance are still to be added.
+  water_class, emit_dist_km, emit_cap_50km_mw). Roads and elevation are still to be added.
 - Phase 0 Parquet: data/interim/delhi_2024-01.parquet (with file metadata).
-- Emitters: OPEN (Day 3).
-- Source: WRI Global Power Plant Database via GEE (WRI/GPPD/power_plants), frozen to
+- Emitters (Day 3):
+  - Source: WRI Global Power Plant Database via GEE (WRI/GPPD/power_plants), frozen to
     config/emitters_india_fossil.csv (332 plants: 246 coal, 60 gas, 26 oil) with
     config/emitters_india_fossil.meta.txt (asset, pull date, filter). Feature code reads
     only the frozen file, never the asset. India total in the asset: 845 plants.
@@ -217,17 +230,15 @@ OPEN = not yet checked.
   - Features: emit_dist_km (nearest plant), emit_cap_50km_mw (capacity within 50 km;
     the radius is a guess). Superseded: the first emit_dist_km (20 plants including
     hydro, solar, nuclear and the two closed plants).
-  - Signal check against Jan 2024 mean NO2 and against distance to central Delhi:
-     - Signal check (Jan 2024, 320 cells, Spearman vs mean observed NO2): emit_dist_km -0.77,
-    emit_cap_50km_mw +0.46, distance to central Delhi (reference only, not a feature) -0.72.
-    Overlap with the urban core: emit_dist vs dist_center +0.56; cap vs dist_center -0.43.
-    Coefficient of variation: emit_dist 0.53, emit_cap 0.39 (both above the 0.3
-    near-constant flag). With 330 plants after exclusions, 12 near the box.
+  - First signal check (Jan 2024, 320 cells, Spearman vs mean observed NO2): emit_dist_km
+    -0.77, emit_cap_50km_mw +0.46, distance to central Delhi (reference only, not a
+    feature) -0.72. Overlap with the urban core: emit_dist vs dist_center +0.56; cap vs
+    dist_center -0.43. Coefficient of variation: emit_dist 0.53, emit_cap 0.39 (both above
+    the 0.3 near-constant flag). 330 plants after exclusions, 12 near the box.
     Caveats: one winter month; neighbouring cells are autocorrelated so the effective
     sample is far below 320; plants sit in or near urban areas, so this is largely
     "urbanness". No significance test.
-    Decision: KEEP both as candidates for the Phase 3 ablation. No claim that they help.
-        Partial correlation (rank-based, 320 cells, 11-21 observed days per cell, median 17).
+  - Partial correlation (rank-based, 320 cells, 11-21 observed days per cell, median 17).
     Controlling for distance to a hard-coded Delhi centre (28.63N, 77.22E): emit_dist_km
     -0.63, emit_cap_50km_mw +0.23. Controlling for a spatial surface (scripts/10d):
       plane (lat+lon):                 emit_dist -0.79, emit_cap +0.51
@@ -238,18 +249,20 @@ OPEN = not yet checked.
     near them; not separable here. emit_cap_50km_mw collapses and changes sign: the raw
     +0.46 was mostly location. Heavy controls can also remove real signal from smooth
     features. One winter month, correlational, no model.
-    Decision: KEEP emit_dist_km as a Phase 3 ablation candidate. DROP emit_cap_50km_mw
+  - Decision: KEEP emit_dist_km as a Phase 3 ablation candidate. DROP emit_cap_50km_mw
     from the first feature set (test capacity via the wind-aware exposure instead, not
     by tuning the 50 km radius). The column stays in cells_static.parquet but is unused.
 
-## Open items before gate G0
-- Emitter features: signal check (scripts/10b) and decision on whether to keep them.
-- CPCB station access: automatic or manual? Drop if manual.
-- D7 demo decision.
-- Record the exact QA threshold and what the GEE collection already filters.
-- Alert policy on the monthly quota.
-- Short days after 2025-11-22.
-- G0 one-page feasibility note.
+## Open items carried into Phase 1 (G0 met: see notes/g0_feasibility.md)
+- Add obs_utc_hour to every row (the Phase 0 Parquet stores the angles, not the hour).
+- Measure the full live request: weather with lags, and the EECU cost of interactive calls.
+- Quota alert policy at 50% and 80% of the monthly cap: confirm it exists.
+- Short archive days after 2025-11-22; the two-granule-day rule; repeat the 50% threshold
+  and negative-value checks on the full export (summer, monsoon).
+- D2: valid-area weighting across granules; within-day comparison for partial-coverage cells.
+- D4: confirm whether ERA5's newest data is preliminary and later revised.
+- Ground data: station coordinates, Sirifort NO2, OpenCity Data Dictionary timezone statement.
+- Verify the emitters near each new city before using emitter features (Phase 5).
 
 ## Gotchas found so far
 - reduceRegions on a single-band image names the output property after the reducer
@@ -259,3 +272,6 @@ OPEN = not yet checked.
 - GEE collection getInfo() is limited to 5,000 elements. Query by month.
 - Granule counts are orbit files, not overpasses.
 - Solar azimuth must be averaged via sin/cos.
+- pandas default date parsing silently dropped 61% of the CPCB rows: use format="ISO8601".
+- A timestamp label (+0000) can be wrong: check it against solar radiation or another
+  physical signal before matching to satellite time.

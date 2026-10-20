@@ -14,3 +14,6 @@ build-backend="setuptools.build_meta"
 #find packages inside src directory
 [tool.setuptools.packages.find]
 where=["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
