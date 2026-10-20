@@ -1,0 +1,5 @@
+timestamp,label,wall_seconds,eecu_seconds,note
+2026-10-20T11:30:41,"live request (script 00, one day, 320 cells)",10.678071,,"upper bound, includes Python start-up"
+2026-10-20T11:37:02,export 2024-01,16,4.1981658935546875,"31 days, 320 cells"
+2026-10-20T11:55:24,export 2024-01,80,7.556014060974121,"31 days, 320 cells"
+2026-10-20T11:59:55,export 2024-01,31,7.811262130737305,"31 days, 320 cells"
