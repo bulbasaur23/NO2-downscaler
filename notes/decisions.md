@@ -275,3 +275,14 @@ OPEN = not yet checked.
 - pandas default date parsing silently dropped 61% of the CPCB rows: use format="ISO8601".
 - A timestamp label (+0000) can be wrong: check it against solar radiation or another
   physical signal before matching to satellite time.
+
+  - Pull labels (Phase 1): algo/proc per day come from granules starting 05:00-11:00 UTC
+  only (Delhi covering granules start ~06:25-08:25 UTC, from 07b), not all ~14 global
+  granules of the day. A rough filter: mixed labels can remain on version-change days
+  (e.g. 2025-11-22, processor change at 08:56 UTC). OPEN: replace with the version of
+  the granule that actually covers the box, using obs time (step 1.3).
+- Pipeline window: 2022-07 to 2026-09 (51 months). 2026-10 is excluded: the archive
+  ends 2026-10-08 and a day with no granules is recorded as n_granules=0, which would
+  read as no_overpass for dates after the archive end. Guard needed before extending.
+- Pipeline timing (Phase 1.1): 62-65 s per month (Jan 2024), interactive per-day pulls.
+  Output matches the Phase 0 export exactly (max difference 1e-13).
