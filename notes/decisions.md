@@ -199,6 +199,21 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
   granule (2024-01-28): status no_overpass.
 - Store obs_utc_hour and n_granules in every row. A unit test for the timezone and the
   interpolation is required before the feature module is accepted.
+  - Weather pull design (Phase 1.3b): hourly ERA5/HOURLY (u10, v10, t2m, d2m, sp, tp, blh),
+  one series per ERA5 pixel, not per cell (320 cells share ~20 pixels). Cells are mapped to
+  pixels empirically (scripts/31: cells with identical sampled values share a pixel);
+  weather for a cell = the pixel containing its centre (nearest pixel, no spatial
+  interpolation: bilinear would add smooth within-pixel gradients that act like
+  coordinates). If ERA5 pixel centres sit on multiples of 0.25 deg (unchecked), edges fall
+  at 0.125 deg offsets and cut through some 0.05 deg cells. Window 2022-06 to 2026-09 (52
+  months; June 2022 gives the 48 h lags for the first day). Pulled in 7-day chunks (5,000
+  element limit), manifest region "era5_delhi_ncr".
+- Planned feature definitions (plan, D8; my reading of "previous-day" and "24 h/48 h before
+  the overpass", settle in 1.3c): values at the cell's observation time interpolated
+  between bracketing hours; u/v means over the previous UTC calendar day; trailing 24 h
+  and 48 h means ending at the observation time; ventilation = wind speed x BLH at
+  overpass; previous-day precipitation = sum over the previous UTC day. Humidity from
+  t2m and d2m (Magnus). Precipitation accumulation convention: unverified (scripts/33).
 
 ## D5. Quota
 - Tier: Earth Engine noncommercial, one project only. Monthly cap 540,000 EECU-seconds
