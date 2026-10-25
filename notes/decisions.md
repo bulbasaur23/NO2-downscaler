@@ -261,6 +261,18 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
   day): normal days mean 0.0%, p95 0.1%, max 59%; flagged days mean 2.3%, median 0, p95
   13.4%, max 207%. ~0.5% of all cell-days differ by more than 13%. Per-cell rule kept
   (cheap, correct). Large ratios likely come from small BLH values (unchecked).
+  - Within-month check (scripts/36b; 51 year-months with >= 8 days, 4-5 per calendar month;
+  median across years): wind speed negative in 51 of 51 year-months (median -0.49; -0.21 to
+  -0.69 by month); 24 h wind 98% negative (median -0.40); ventilation 88% negative (median
+  -0.42), strongest Nov-Jan (-0.48 to -0.72), near zero in Apr, May, Sep; previous-day rain
+  71% negative (median -0.25), strongest Sep -0.61, Oct -0.44, ~0 in dry months; BLH
+  median -0.04, 55% negative: winter negative (Dec -0.32, Jan -0.40, Feb -0.22), Apr-Jun
+  and Sep weakly positive (+0.16 to +0.28), others ~0.
+  Reading: the pooled monsoon BLH correlation (+0.53) was mostly a seasonal confound
+  (within monsoon months -0.13 to +0.27); a weak positive BLH relation remains in Apr-Jun
+  and Sep, unexplained. Wind is the robust driver of the day-to-day signal; ventilation adds
+  a little in Nov-Jan only. Wind direction not examined (speed only). Few year-months per
+  calendar month: read the pattern, not neighbouring-month differences.
   
 ## D5. Quota
 - Tier: Earth Engine noncommercial, one project only. Monthly cap 540,000 EECU-seconds
