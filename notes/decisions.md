@@ -372,6 +372,21 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
   - DECISION: KEEP emit_dist_km as a Phase 3 ablation candidate. DROP emit_cap_50km_mw
     from the first feature set (test capacity via a wind-aware exposure, not by tuning
     the radius). The column stays in cells_static.parquet but is unused.
+    - Elevation (scripts/40): USGS/SRTMGL1_003 averaged to the 1,113 m grid (reduceResolution
+  mean), then mean, population std and max per cell (25 pixels per cell); stored in
+  cells_static.parquet as elev_mean, elev_std, elev_max. No missing cells. elev_mean 190.8-
+  290.8 m (median 214.9; quartiles 207.2/221.4); elev_std median 1.4 m, 75% 3.7, max 34.3;
+  31 cells have std > 10 m. Highest cells (281-291 m) at lon 77.0-77.2, lat 28.2-28.4,
+  consistent with the Aravalli ridge in the south-west (not checked on a map). 1 km vs 30 m
+  cell means differ by <= 0.22 m; 30 m std is ~1.9x the 1 km std (median), 3.6x at p95.
+  Small unexplained discrepancy: 31 cells with 1 km std > 10 m vs 29 at 30 m (the finer
+  std should not be smaller; the 30 m query likely uses a grid slightly different from
+  SRTM's native 1 arc-second pixels). Not pursued.
+- TRANSFER RISK (open, Phase 3/5): absolute elevation differs strongly between cities
+  (Bengaluru ~900 m, Hyderabad ~500 m, Kolkata near sea level, from memory) and falls far
+  outside the Delhi training range (191-291 m). elev_std transfers; elev_mean is a
+  candidate for a relative form (cell minus region median) or exclusion. Decide with the
+  static-feature correlation matrix and the transfer test.
 
 ## Open items
 - 1.3a: scripts/30b (cause of the 10% flagged days); decide whether to re-pull azimuth.
