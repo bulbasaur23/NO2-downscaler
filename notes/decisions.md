@@ -139,8 +139,11 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
 - Parity, ERA5 vs ERA5-Land, NCR box mean, 25 dates x 2 hours: wind r 0.99, rmse
   0.21-0.25 m/s; temperature r 0.99, rmse 1.2 K; pressure r 1.00; dewpoint r 0.955 with
   +2.3 K bias. Box averages only: within-box detail not tested.
-- BLH seasonal shape sensible (indicative, fixed hours 07/08 UTC): Dec-Jan ~670 m, May
-  ~3,450 m. One single-hour request (ERA5 + ERA5-Land): 1.6 s.
+- BLH seasonal shape (script 06, fixed hours 07/08 UTC, ~2 dates per month: indicative
+  only): Dec-Jan ~670 m, May ~3,450 m. The May figure was NOT representative. Full-window
+  mean BLH at the overpass (scripts/34), by calendar month (m): Jan 696, Feb 1,026, Mar
+  1,437, Apr 2,544, May 2,268, Jun 1,833, Jul 954, Aug 947, Sep 1,095, Oct 1,217, Nov 1,137,
+  Dec 777. One single-hour request (ERA5 + ERA5-Land): 1.6 s.
 - PROVISIONAL choice: ERA5 single levels as the only weather source. Confirm with the
   Phase 3 ablation. ERA5 pixels are 0.25 degree: ~4 x 3 weather pixels over the box.
   Weather cannot explain differences between neighbouring cells; static layers and
@@ -199,22 +202,66 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
   granule (2024-01-28): status no_overpass.
 - Store obs_utc_hour and n_granules in every row. A unit test for the timezone and the
   interpolation is required before the feature module is accepted.
-  - Weather pull design (Phase 1.3b): hourly ERA5/HOURLY (u10, v10, t2m, d2m, sp, tp, blh),
-  one series per ERA5 pixel, not per cell (320 cells share ~20 pixels). Cells are mapped to
-  pixels empirically (scripts/31: cells with identical sampled values share a pixel);
-  weather for a cell = the pixel containing its centre (nearest pixel, no spatial
-  interpolation: bilinear would add smooth within-pixel gradients that act like
-  coordinates). If ERA5 pixel centres sit on multiples of 0.25 deg (unchecked), edges fall
-  at 0.125 deg offsets and cut through some 0.05 deg cells. Window 2022-06 to 2026-09 (52
-  months; June 2022 gives the 48 h lags for the first day). Pulled in 7-day chunks (5,000
-  element limit), manifest region "era5_delhi_ncr".
+  - - Weather pull (Phase 1.3b, scripts/31-33): hourly ERA5/HOURLY (u10, v10, t2m, d2m, sp, tp,
+  blh), one series per ERA5 pixel, not per cell. Cells are mapped to pixels empirically
+  (scripts/31: cells with identical sampled values share a pixel). Result: exactly 20
+  pixels, all full rectangles; pixel edges at multiples of 0.25 deg (lon 77.00/77.25/77.50/
+  77.75, lat 28.25/28.50/28.75), so the 0.05 deg grid NESTS in the ERA5 grid and no cell
+  straddles two pixels (my earlier guess that edges cut through cells was wrong). Nine
+  pixels hold 25 cells, three hold 20, the rest are edge slivers (corner pixel: 1 cell).
+  Weather takes at most 20 distinct values per hour across the 320 cells: it cannot
+  explain differences within a pixel. Weather for a cell = its pixel (nearest pixel, no
+  spatial interpolation: bilinear would add smooth within-pixel gradients that act like
+  coordinates). Window 2022-06 to 2026-09 (52 months; June 2022 gives the 48 h lags for the
+  first day); 7-day chunks (5,000 element limit); manifest region "era5_delhi_ncr".
+  Pulled in 16.6 min (~20 s per month), rows = hours x 20 exactly. Expected total 759,840.
+- Jan 2024 check (scripts/33): no missing values; t2m 3-23 C, d2m below t2m, sp 985-1001
+  hPa; BLH ~55-70 m at night, peak ~630-675 m at 8-11 UTC (8 UTC mean 674 m, matching
+  script 06); tp profile by UTC hour is not monotonic, so hourly values and not a running
+  total since 00 UTC (a January with 0.45 mm/day: noisy but the property is robust);
+  min tp -0.00 (tiny negative: clipped to 0 in features). Pulled series equals the
+  pixel-mapping sample exactly. Full-window check: see scripts/33.
+- Feature definitions (src/no2/weather_features.py, 10 unit tests; my reading of the plan's
+  "previous-day mean wind" and "24 h/48 h mean wind before the overpass"): values at the
+  cell's observation time interpolated linearly between the bracketing ERA5 hours (UTC);
+  u/v means over the previous UTC calendar day; trailing 24 h and 48 h means of the
+  interpolated series ending at the observation time; ventilation = wind speed x BLH at the
+  overpass; previous-day precipitation = sum over the previous UTC day (mm); humidity from
+  t2m and d2m (Magnus). Missing observation time -> NaN features (22 no_overpass days).
+  Cells without angles on a day with an overpass use the day's median time.
+  Precipitation timestamp convention (hour ending at the timestamp vs starting) unverified;
+  it only affects precip_ovp_mm slightly.
 - Planned feature definitions (plan, D8; my reading of "previous-day" and "24 h/48 h before
   the overpass", settle in 1.3c): values at the cell's observation time interpolated
   between bracketing hours; u/v means over the previous UTC calendar day; trailing 24 h
   and 48 h means ending at the observation time; ventilation = wind speed x BLH at
   overpass; previous-day precipitation = sum over the previous UTC day. Humidity from
   t2m and d2m (Magnus). Precipitation accumulation convention: unverified (scripts/33).
-
+- Full-window ERA5 check (scripts/33): 52/52 months, 759,840 rows = expected, 0 duplicates,
+  no missing values except tp: 280 rows missing (14 hours x 20 pixels if all pixels share
+  the same hours: unconfirmed, see scripts/35). Ranges plausible: t2m 3.4-47.3 C, d2m -5 to
+  31 C, sp 964-1005 hPa, blh 10-5,321 m (median 199). BLH by UTC hour: night ~125-200 m,
+  peak 1,348 m at 8 UTC. tp by UTC hour is not monotonic over 4 years: per-hour values,
+  not a running total. Mean daily precipitation by month (mm/day): Jan 0.92, Feb 0.43,
+  Mar 1.15, Apr 0.43, May 1.26, Jun 2.61, Jul 8.44, Aug 5.64, Sep 5.47, Oct 1.84, Nov 0.07,
+  Dec 0.29 (~875 mm/yr by my arithmetic; not compared with station records; months are
+  sampled over 4-5 years).
+- Missing weather is never imputed: trailing windows and interpolations that touch a
+  missing hour give NaN (only precip features are affected). The builder raises on a gap
+  in the hourly time axis. Tests: tests/test_weather_features.py (14 tests, 30 in total).
+- Weather features built (scripts/34, data/interim/weather_features_delhi.parquet; 496,960
+  cell-days). Observation-time source: cell 476,109, day_median 13,811 (cell had no angles),
+  none 7,040 (no_overpass days: features NaN). Extra missing beyond those: precip_prevday_mm
+  640 (2022-08-02, 2024-02-02, the source gap); no other feature. Spot check: BLH feature
+  equals a by-hand interpolation (445.25). Ranges: ws 0.02-9.5 m/s, t at overpass 10.5-47.2 C,
+  rh 9-100% (clipped), blh 111-5,117 m (median 1,104), vent 13-28,840 m2/s (median 2,695),
+  precip_prevday up to 190.8 mm (date to be checked: possibly the 28 June 2024 Delhi
+  downpour, from memory, unverified).
+- Value of per-cell timing (relative BLH difference, per-cell time vs one median time per
+  day): normal days mean 0.0%, p95 0.1%, max 59%; flagged days mean 2.3%, median 0, p95
+  13.4%, max 207%. ~0.5% of all cell-days differ by more than 13%. Per-cell rule kept
+  (cheap, correct). Large ratios likely come from small BLH values (unchecked).
+  
 ## D5. Quota
 - Tier: Earth Engine noncommercial, one project only. Monthly cap 540,000 EECU-seconds
   (system limit, not adjustable). Daily quota set to 20,000 (visible in the console).
@@ -324,6 +371,7 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
 - D3: replace the 05:00-11:00 label window with the covering granule's version; guard for
   dates after the archive end; two-granule-day rule.
 - D4: confirm whether ERA5's newest data is preliminary and later revised.
+- 
 - Phase 3: rule for zero/negative targets; robustness to extreme values.
 - Alert policy at 50%/80%: unconfirmed, low priority.
 - Verify the emitters near each new city before using emitter features (Phase 5).
