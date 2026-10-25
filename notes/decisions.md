@@ -273,7 +273,7 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
   and Sep, unexplained. Wind is the robust driver of the day-to-day signal; ventilation adds
   a little in Nov-Jan only. Wind direction not examined (speed only). Few year-months per
   calendar month: read the pattern, not neighbouring-month differences.
-  
+
 ## D5. Quota
 - Tier: Earth Engine noncommercial, one project only. Monthly cap 540,000 EECU-seconds
   (system limit, not adjustable). Daily quota set to 20,000 (visible in the console).
@@ -404,3 +404,8 @@ OPEN = not yet checked. PARKED = tried, failed, not pursued.
 - Validate command-line arguments before doing work (a trailing dot created a wrongly
   named file and a junk manifest row).
 - The monthly quota counter is unreliable (went down once): trust the daily counter.
+- - Earth Engine 403 USER_PROJECT_DENIED ("Caller does not have required permission to use
+  project"): the stored login belongs to a different Google account than the project owner.
+  Fix: `earthengine authenticate --force` and choose the owning account. gee.init() calls
+  ee.Authenticate() on any failure, so a permission error shows up twice (the second copy is
+  the same error, not a new one).
